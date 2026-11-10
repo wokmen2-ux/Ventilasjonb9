@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ventilasjon">
+<meta name="theme-color" content="#E9EFEE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11191D" media="(prefers-color-scheme: dark)">
+<title>Ventilasjon</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌬️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9EFEE; --surface:#F7FAF9; --ink:#17262D; --muted:#5B6D73; --line:#CCD8D7;
+  --fresh:#2D7F8E; --stale:#9A7B55; --heat:#C98A12; --ok:#2E8B57; --bad:#B0413E;
+  --btn:#DDE7E6; --btn-on:#17262D; --btn-on-ink:#F7FAF9;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11191D; --surface:#182328; --ink:#E4EDEC; --muted:#93A6AA; --line:#2A3A40;
+    --fresh:#5FB3C2; --stale:#C4A47A; --heat:#E8B33A; --ok:#5CC48A; --bad:#E07A76;
+    --btn:#1F2D33; --btn-on:#E4EDEC; --btn-on-ink:#11191D;
+    color-scheme:dark;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%}
+body{
+  margin:0; min-height:100%; background:var(--bg); color:var(--ink);
+  font-family:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:17px; line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+main{max-width:520px; margin:0 auto; padding:18px 18px 40px}
+header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px}
+h1{font-size:1.55rem; font-weight:700; margin:0; letter-spacing:-.01em}
+.status{display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--muted)}
+.dot{width:10px; height:10px; border-radius:50%; background:var(--muted)}
+.dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)}
+.dot.wait{background:var(--heat); animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.3}}
+
+/* Varmeveksler */
+.unit{margin:8px -6px 4px}
+.unit svg{width:100%; height:auto; display:block}
+.flow{fill:none; stroke-width:7; stroke-linecap:round}
+.flow.fresh{stroke:var(--fresh)} .flow.stale{stroke:var(--stale)}
+.flow.anim{stroke-dasharray:2 16; stroke-width:4; stroke:var(--surface); opacity:.85; animation:move var(--dur,0s) linear infinite}
+@keyframes move{to{stroke-dashoffset:-36}}
+@media (prefers-reduced-motion:reduce){.flow.anim{animation:none; display:none}}
+.core{fill:var(--surface); stroke:var(--line); stroke-width:1.5}
+.tlabel{font-size:12px; fill:var(--muted)}
+.tval{font-size:24px; font-weight:600; fill:var(--ink)}
+.side{font-size:11px; fill:var(--muted)}
+
+.heater{display:flex; align-items:center; gap:8px; font-size:.92rem; color:var(--muted); min-height:1.4em; margin:0 0 18px}
+.heater.on{color:var(--heat)}
+
+section{border-top:1px solid var(--line); padding:18px 0 4px}
+h2{font-size:1rem; font-weight:600; margin:0 0 12px; display:flex; justify-content:space-between; align-items:baseline}
+h2 small{font-weight:400; color:var(--muted); font-size:.85rem}
+
+.temp{display:flex; align-items:center; justify-content:space-between; gap:12px}
+.temp output{font-size:3.4rem; font-weight:700; line-height:1; letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.temp output span{font-size:1.4rem; font-weight:400; color:var(--muted); margin-left:2px}
+.round{width:58px; height:58px; border-radius:50%; border:0; background:var(--btn); color:var(--ink); font:inherit; font-size:1.8rem; cursor:pointer; touch-action:manipulation}
+.round:active{transform:scale(.94)}
+.round:disabled{opacity:.35; cursor:default}
+
+.seg{display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:6px; background:var(--btn); padding:5px; border-radius:16px}
+.seg button{border:0; background:transparent; color:var(--ink); font:inherit; font-size:.98rem; padding:12px 6px; border-radius:11px; cursor:pointer; touch-action:manipulation; position:relative}
+.seg button[aria-pressed="true"]{background:var(--btn-on); color:var(--btn-on-ink); font-weight:600}
+.seg button.pending::after{content:""; position:absolute; top:7px; right:8px; width:6px; height:6px; border-radius:50%; background:var(--heat); animation:pulse 1s infinite}
+.bars{display:inline-flex; gap:2px; align-items:flex-end; height:12px; margin-right:6px; vertical-align:-1px}
+.bars i{width:3px; background:currentColor; border-radius:1px; opacity:.3}
+.bars i.f{opacity:1}
+
+.hint{font-size:.85rem; color:var(--muted); margin:8px 0 0}
+button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--fresh); outline-offset:2px}
+
+.banner{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--bad); border-radius:10px; padding:12px 14px; font-size:.92rem; margin:10px 0 14px}
+.banner a{color:var(--fresh)}
+[hidden]{display:none!important}
+
+/* Oppsett */
+.setup label{display:block; font-weight:600; margin:14px 0 6px}
+.setup input{width:100%; font:inherit; font-size:1.2rem; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--ink); letter-spacing:.06em}
+.primary{margin-top:14px; width:100%; border:0; border-radius:14px; padding:15px; font:inherit; font-weight:600; background:var(--btn-on); color:var(--btn-on-ink); cursor:pointer}
+.link{background:none; border:0; color:var(--muted); font:inherit; font-size:.88rem; text-decoration:underline; cursor:pointer; padding:0}
+details{margin-top:22px; font-size:.85rem; color:var(--muted)}
+details pre{white-space:pre-wrap; word-break:break-all; max-height:220px; overflow:auto; background:var(--surface); border:1px solid var(--line); padding:10px; border-radius:8px; font-size:.78rem}
+footer{display:flex; justify-content:space-between; gap:10px; margin-top:26px; font-size:.85rem; color:var(--muted)}
+.list{font-size:.85rem; color:var(--muted); width:100%; border-collapse:collapse}
+.list td{padding:4px 0; border-bottom:1px solid var(--line); vertical-align:top}
+.list td:last-child{text-align:right; color:var(--ink); padding-left:10px}
+.wrap{overflow-x:auto}
+.readings{display:flex; gap:18px; flex-wrap:wrap; font-size:.92rem; color:var(--muted); min-height:1.4em; margin:0 0 18px}
+.readings b{color:var(--ink); font-weight:600}
+.readings .warn{color:var(--heat)}
+</style>
+</head>
+<body>
+<main>
+
+<div id="setup" class="setup" hidden>
+  <h1>Koble til</h1>
+  <p>Appen snakker med aggregatet gjennom din egen lille server (workeren), som logger inn hos BITZER Smart Connect for deg.</p>
+  <label for="wUrl">Adressen til workeren</label>
+  <input id="wUrl" type="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://ventilasjon.dittnavn.workers.dev">
+  <label for="wKey">Appnøkkel</label>
+  <input id="wKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Samme som APP_KEY i workeren">
+  <p id="setupErr" class="hint" style="color:var(--bad)" hidden></p>
+  <button class="primary" id="saveSetup">Koble til</button>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <h1>Ventilasjon</h1>
+    <div class="status" role="status" aria-live="polite"><span class="dot" id="dot"></span><span id="statusText">Henter …</span></div>
+  </header>
+
+  <div class="banner" id="errBox" hidden></div>
+
+  <div class="unit" aria-label="Temperaturer i varmeveksleren">
+    <svg viewBox="0 0 340 214" role="img" aria-labelledby="unitTitle">
+      <title id="unitTitle">Varmeveksler med uteluft, tilluft, avtrekk og avkast</title>
+      <!-- frisk luft: uteluft → tilluft -->
+      <path id="pFresh" class="flow fresh" d="M30 62 H110 L230 148 H310"/>
+      <path class="flow anim" d="M30 62 H110 L230 148 H310"/>
+      <!-- brukt luft: avtrekk → avkast -->
+      <path id="pStale" class="flow stale" d="M310 62 H230 L110 148 H30"/>
+      <path class="flow anim" d="M310 62 H230 L110 148 H30"/>
+      <rect class="core" x="140" y="75" width="60" height="60" rx="6" transform="rotate(45 170 105)"/>
+      <text x="20" y="22" class="tlabel">Uteluft</text>
+      <text x="20" y="48" class="tval" id="t_out">–</text>
+      <text x="320" y="22" class="tlabel" text-anchor="end">Avtrekk</text>
+      <text x="320" y="48" class="tval" text-anchor="end" id="t_extract">–</text>
+      <text x="20" y="176" class="tlabel">Avkast</text>
+      <text x="20" y="202" class="tval" id="t_exhaust">–</text>
+      <text x="320" y="176" class="tlabel" text-anchor="end">Tilluft</text>
+      <text x="320" y="202" class="tval" text-anchor="end" id="t_supply">–</text>
+    </svg>
+  </div>
+  <p class="readings" id="readings"></p>
+
+  <section>
+    <h2>Ønsket temperatur <small id="tempNote"></small></h2>
+    <div class="temp">
+      <button class="round" id="tDown" aria-label="Senk temperaturen">−</button>
+      <output id="tTarget" aria-live="polite">–<span>°C</span></output>
+      <button class="round" id="tUp" aria-label="Øk temperaturen">+</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Viftehastighet <small id="fanNote"></small></h2>
+    <div class="seg" id="fanSeg">
+      <button data-fan="1" aria-pressed="false"><span class="bars"><i class="f" style="height:5px"></i><i style="height:8px"></i><i style="height:12px"></i></span>Lav</button>
+      <button data-fan="2" aria-pressed="false"><span class="bars"><i class="f" style="height:5px"></i><i class="f" style="height:8px"></i><i style="height:12px"></i></span>Normal</button>
+      <button data-fan="3" aria-pressed="false"><span class="bars"><i class="f" style="height:5px"></i><i class="f" style="height:8px"></i><i class="f" style="height:12px"></i></span>Høy</button>
+    </div>
+    <p class="hint">Endringer går via BITZER-skyen og tar vanligvis noen sekunder, av og til opptil ett minutt.</p>
+  </section>
+
+  <footer>
+    <span id="updated">Ingen data ennå</span>
+    <button class="link" id="changeSetup">Innstillinger</button>
+  </footer>
+
+  <details>
+    <summary>Alle verdier fra aggregatet</summary>
+    <div class="wrap"><table class="list" id="allParams"></table></div>
+  </details>
+</div>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const P = { FAN:"Control.VentSet", TEMP:"Control.TempSet", SUPPLY:"Input.T7_Inlet", EXTRACT:"Input.T3_Exhaust",
+              EXHAUST:"Input.T18_Rotor", OUT:"Input.T8_Outdoor", HEATER:"Input.T9_Heater", RH:"AirQual.RH" };
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+    set(k,v){ try { localStorage.setItem(k,v); } catch {} }
+  };
+
+  let cfg = { url: store.get("vent.url") || "", key: store.get("vent.key") || "" };
+  let state = null, lastOk = 0, pollTimer = null, fastUntil = 0;
+  const pending = {};               // key -> verdi som sendes nå
+  let tempDraft = null, tempTimer = null;
+
+  // ---------- API ----------
+  async function api(path, body, timeoutMs = 20000) {
+    const res = await fetch(cfg.url.replace(/\/+$/, "") + path, {
+      method: body ? "POST" : "GET",
+      headers: Object.assign({ "X-App-Key": cfg.key }, body ? { "Content-Type": "application/json" } : {}),
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(timeoutMs)
+    });
+    const data = await res.json().catch(() => ({ error: "Ugyldig svar fra workeren (" + res.status + ")" }));
+    if (!res.ok) throw Object.assign(new Error(data.error || ("Feil " + res.status)), { status: res.status });
+    return data;
+  }
+
+  // ---------- Oppsett ----------
+  function showSetup(msg) {
+    clearTimeout(pollTimer);
+    $("app").hidden = true; $("setup").hidden = false;
+    $("wUrl").value = cfg.url; $("wKey").value = cfg.key;
+    $("setupErr").hidden = !msg; $("setupErr").textContent = msg || "";
+  }
+  $("saveSetup").onclick = async () => {
+    const url = $("wUrl").value.trim(), key = $("wKey").value.trim();
+    if (!/^https:\/\//.test(url) || !key) { showSetup("Fyll inn en https-adresse og appnøkkelen."); return; }
+    cfg = { url, key };
+    $("saveSetup").textContent = "Kobler til …"; $("saveSetup").disabled = true;
+    try {
+      await api("/api/state", null, 60000);
+      store.set("vent.url", url); store.set("vent.key", key);
+      start();
+    } catch (e) {
+      showSetup(e.status === 401 ? e.message : "Fikk ikke kontakt: " + e.message);
+    } finally {
+      $("saveSetup").textContent = "Koble til"; $("saveSetup").disabled = false;
+    }
+  };
+  $("changeSetup").onclick = () => showSetup();
+
+  // ---------- Henting ----------
+  function start() {
+    $("setup").hidden = true; $("app").hidden = false;
+    refresh();
+  }
+  async function refresh() {
+    clearTimeout(pollTimer);
+    try {
+      state = await api("/api/state", null, 60000);
+      lastOk = Date.now();
+      $("errBox").hidden = true;
+    } catch (e) {
+      showError(e.status === 401 ? e.message + ". Sjekk innstillingene." : "Fikk ikke hentet data: " + e.message);
+    }
+    render();
+    if (document.visibilityState === "visible") pollTimer = setTimeout(refresh, Date.now() < fastUntil ? 4000 : 20000);
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
+
+  // ---------- Endringer ----------
+  async function set(key, value) {
+    pending[key] = String(value); render();
+    try {
+      await api("/api/set", { key, value: String(value) }, 90000);
+      if (state && state.params[key]) state.params[key].value = value;
+      fastUntil = Date.now() + 30000;
+    } catch (e) {
+      showError("Endringen ble ikke utført: " + e.message);
+    } finally {
+      delete pending[key];
+      if (key === P.TEMP) tempDraft = null;
+      render(); refresh();
+    }
+  }
+  const num = k => { const v = state && state.params[k] ? Number(state.params[k].value) : NaN; return Number.isFinite(v) ? v : null; };
+  function limits() {
+    const p = state && state.params[P.TEMP];
+    const min = p && Number.isFinite(Number(p.min)) && p.min !== null ? Number(p.min) : 15;
+    const max = p && Number.isFinite(Number(p.max)) && p.max !== null ? Number(p.max) : 26;
+    return [Math.max(10, min), Math.min(30, max)];
+  }
+  function stepTemp(d) {
+    const base = tempDraft ?? (pending[P.TEMP] != null ? Number(pending[P.TEMP]) : num(P.TEMP));
+    if (base == null) return;
+    const [lo, hi] = limits();
+    tempDraft = Math.min(hi, Math.max(lo, Math.round((base + d) * 2) / 2));
+    render();
+    clearTimeout(tempTimer);
+    tempTimer = setTimeout(() => { tempTimer = null; if (tempDraft !== num(P.TEMP)) set(P.TEMP, tempDraft.toFixed(1)); else tempDraft = null; render(); }, 900);
+  }
+  $("tUp").onclick = () => stepTemp(+0.5);
+  $("tDown").onclick = () => stepTemp(-0.5);
+  $("fanSeg").onclick = e => { const b = e.target.closest("button"); if (b && !pending[P.FAN]) set(P.FAN, b.dataset.fan); };
+
+  // ---------- Visning ----------
+  function showError(msg) { $("errBox").textContent = msg; $("errBox").hidden = false; }
+  function setStatus(kind, text) { $("dot").className = "dot " + kind; $("statusText").textContent = text; }
+  const fmt = v => v == null ? "–" : (Math.round(v * 10) / 10).toLocaleString("no-NO") + "°";
+
+  function render() {
+    if (!state) { setStatus("wait", "Henter …"); return; }
+    if (!state.online) setStatus("bad", "Aggregatet er frakoblet");
+    else if (Date.now() - lastOk > 90000) setStatus("bad", "Mistet kontakten");
+    else setStatus("ok", "Tilkoblet");
+
+    $("t_out").textContent = fmt(num(P.OUT));
+    $("t_supply").textContent = fmt(num(P.SUPPLY));
+    $("t_extract").textContent = fmt(num(P.EXTRACT));
+    $("t_exhaust").textContent = fmt(num(P.EXHAUST));
+
+    const bits = [];
+    if (num(P.RH) != null) bits.push("Fuktighet <b>" + Math.round(num(P.RH)) + " %</b>");
+    if (num(P.HEATER) != null) bits.push("Varmebatteri <b>" + fmt(num(P.HEATER)) + "</b>");
+    if (state.alarms) bits.push('<span class="warn">' + state.alarms + (state.alarms === 1 ? " alarm" : " alarmer") + " (for eksempel filterbytte)</span>");
+    $("readings").innerHTML = bits.map(b => "<span>" + b + "</span>").join("");
+
+    const t = tempDraft ?? (pending[P.TEMP] != null ? Number(pending[P.TEMP]) : num(P.TEMP));
+    const [lo, hi] = limits();
+    $("tTarget").innerHTML = (t == null ? "–" : t.toLocaleString("no-NO")) + "<span>°C</span>";
+    $("tDown").disabled = t == null || t <= lo;
+    $("tUp").disabled = t == null || t >= hi;
+    $("tempNote").textContent = tempTimer || pending[P.TEMP] ? "Sender …" : "";
+
+    const fan = pending[P.FAN] ?? (num(P.FAN) != null ? String(num(P.FAN)) : null);
+    document.querySelectorAll("#fanSeg button").forEach(b => {
+      b.setAttribute("aria-pressed", String(b.dataset.fan === fan));
+      b.classList.toggle("pending", pending[P.FAN] === b.dataset.fan);
+    });
+    $("fanNote").textContent = pending[P.FAN] ? "Sender …" : "";
+
+    const speed = state.online ? (Number(fan) || 0) : 0;
+    document.querySelectorAll(".flow.anim").forEach(p => {
+      p.style.display = speed ? "" : "none";
+      p.style.setProperty("--dur", speed ? (3.2 / speed) + "s" : "0s");
+    });
+
+    $("updated").textContent = lastOk ? "Oppdatert " + new Date(lastOk).toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" }) : "Ingen data ennå";
+
+    const rows = Object.entries(state.params).sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([k, p]) => "<tr><td>" + esc(p.name ? p.name + " (" + k + ")" : k) + "</td><td>" + esc(p.value == null ? "–" : String(p.value) + (p.unit ? " " + p.unit : "")) + "</td></tr>");
+    $("allParams").innerHTML = rows.join("");
+  }
+  const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+  if (cfg.url && cfg.key) start(); else showSetup();
+})();
+</script>
+</body>
+</html>
